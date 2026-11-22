@@ -21,10 +21,15 @@ def _collected_by(args: list[str], test_file: str) -> bool:
     included: pytest walks down to that path and stops at the ignored directory.
     """
     ignores = [a.removeprefix("--ignore=") for a in args if a.startswith("--ignore=")]
-    paths = [a for a in args if not a.startswith("--")]
+    paths = _paths(args)
     if any(unit_shards._contains(i, test_file) for i in ignores):
         return False
     return any(unit_shards._contains(p, test_file) for p in paths)
+
+
+def _paths(args: list[str]) -> list[str]:
+    """The positional paths of `args`: neither an option nor the expression after `-m`."""
+    return [a for i, a in enumerate(args) if not a.startswith("-") and (i == 0 or args[i - 1] != "-m")]
 
 
 class UnitShardsTest(unittest.TestCase):
@@ -69,9 +74,16 @@ class UnitShardsTest(unittest.TestCase):
         for shard in unit_shards.SHARDS:
             args = unit_shards.pytest_args(shard)
             ignores = [a.removeprefix("--ignore=") for a in args if a.startswith("--ignore=")]
-            for path in (a for a in args if not a.startswith("--")):
+            for path in _paths(args):
                 hidden = [i for i in ignores if unit_shards._contains(i, path)]
                 self.assertEqual(hidden, [], f"{shard}: {path} is under its own --ignore")
+
+    def test_the_harness_shards_leave_their_gate_runs_out_and_main_keeps_its_slow_modules(self) -> None:
+        for shard in ("harness", "harness-contracts"):
+            args = unit_shards.pytest_args(shard)
+            self.assertEqual(args[-2:], ["-m", "not slow"], shard)
+        for shard in set(unit_shards.SHARDS) - set(unit_shards.SHARD_MARKERS):
+            self.assertNotIn("-m", unit_shards.pytest_args(shard), shard)
 
     def test_core_owns_the_unit_root(self):
         # Anything no other shard claims must still run somewhere.
@@ -92,6 +104,17 @@ class UnitShardsTest(unittest.TestCase):
         # A renamed or deleted file's minutes would no longer count anywhere.
         stale = set(unit_shards.load_durations()) - set(unit_shards.test_files())
         self.assertLess(len(stale), 50, f"refresh unit_shard_durations.json: {sorted(stale)[:10]}")
+
+    def test_almost_every_test_file_has_measured_minutes(self):
+        self.assertEqual(unit_shards.unmeasured_problems(unit_shards.load_durations()), [])
+
+    def test_a_shard_mostly_unmeasured_is_reported(self):
+        durations = unit_shards.load_durations()
+        harness = [f for f in unit_shards.test_files() if f.startswith("tests/unit/harness/")]
+        without = {f: m for f, m in durations.items() if f not in set(harness)}
+        problems = unit_shards.unmeasured_problems(without)
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("harness: "))
 
     def test_a_lopsided_split_is_reported(self):
         totals = dict.fromkeys(unit_shards.SHARDS, 5.0)

@@ -23,3 +23,16 @@ def unit_test_fixtures() -> dict[str, object]:
     needs extra per-test setup or clean-up returns its fixtures here. Here there are none.
     """
     return {}
+
+
+def worker_stages_extra() -> dict[str, bool]:
+    """Labs flags this build pins beside the shared worker stages (Node's ``EDITION_WORKER_STAGES``), at the value
+    a rig runs with: a legacy turn's resolved header carries them, so the turn reads none of them from the settings.
+    Here there are none."""
+    return {}
+
+
+def agent_turn_live_settings_reads_extra() -> int:
+    """How many more times an agent turn without a resolved header reads the settings document live in this build
+    (its own flags, read where the shared ones are). Here none."""
+    return 0

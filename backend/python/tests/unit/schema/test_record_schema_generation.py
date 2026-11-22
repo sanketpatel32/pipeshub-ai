@@ -30,6 +30,7 @@ PINNED = {
     4: "6bb2f59179f808ffc4c9e0a65699433dcda3e743e648964959aff7798ddf290b",  # + refreshIntentId, refreshIntentAtMs, refreshDoneId
     5: "2bd8de874f749e4b50db9eb74e190a8454421135c5de15bf53119f546b5cf632",  # + incarnationId
     6: "de869b01e604dcf9eba8ac2c4d1854afe61e37deaf19615098f2ebe0fea54538",  # + indexedParser, indexedParserAt, indexedParserVrid, indexedParserSource
+    7: "6452b2c1f3ecb1c2d68c6b9f27c5caef946d3a6ef80ce0b66541d9665e825278",  # + editionFields, chat-attachment uploader fields
 }
 # Change app_schema's rule -> bump APP_SCHEMA_GENERATION, then pin the new hash here.
 APPS_PINNED = {
